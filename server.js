@@ -9,10 +9,6 @@ app.get('/', function (req, res) {
   res.render('index')
 });
 
-
-app.get('/got', (req, res) => {
-  res.status(200).send('nothing happens here')
-})
 //
 function Player(id, name, numbers, isDictator ){// role == dictator || p/ayer
   this.id=id
@@ -21,17 +17,45 @@ function Player(id, name, numbers, isDictator ){// role == dictator || p/ayer
   this.isDictator = isDictator // is playing when role == true
 }
 
-function Game(playerA, playerB, playerC, numbers, operators, movingPlayers){
-  this.playerA = playerA
-  this.playerB = playerB
-  this.operators = operators
-  this.movingPlayers = movingPlayers
-}
-//
 players = []
 playersListIds = []
 playerRoles = {}
-game = new Game()
+gameState = {}
+// Game state looks like this:
+// {
+//   currentRound: 2,
+//   gameKey: 'string',
+//  rounds:[
+//  {
+//     roundNum: 0,
+//     players: {
+//       dictator: playerId,
+//       prisoners:[playerId, playerId]
+//     },
+//     endowment: 20,
+//     strategies: [
+//       {playerId: playerId, strategy: a},
+//       {playerId: playerId, strategy: r}
+//     ],
+//     payouts:[
+//       {playerId: playerId, payout: 80}
+//       {playerId: playerId, payout: 10}
+//       {playerId: playerId, payout: 10}
+//     ],
+//   }
+//  ...
+//  ]
+// }
+
+
+function Game(gameState, playerList,round, readyToStart){
+  Game.gameState = gameState // object
+  Game.playerList = playerList // list of players
+  Game.gameState.currentRound = round // which round?
+  Game.readyToStart = readyToStart
+}
+//
+
 //
 //
 function assignRole(playerList){
@@ -43,14 +67,17 @@ function assignRole(playerList){
   prisoners = playerList.filter(function(player){
     return player !== dictator
   })
-  var gameRoles =  {dictator:dictator, prisoners:prisoners}
-  console.log(gameRoles.dictator)
+  var playerRoles =  {dictator:dictator, prisoners:prisoners}
+  console.log(playerRoles.dictator)
   console.log('players')
-  console.log(gameRoles.prisoners.forEach(function(prisoner){console.log(prisoner)}))
-  console.log(gameRoles)
-  return gameRoles
+  console.log(playerRoles.prisoners.forEach(function(prisoner){console.log(prisoner)}))
+  console.log(playerRoles)
+  return playerRoles
 }
 
+function assignPayouts(game){
+
+}
 // function dictatorStep(dictator, prisoners)=>{
 //
 // }
@@ -59,36 +86,67 @@ server.listen(9000, function () {
   console.log(`Listening on ${server.address().port}`);
 });
 
-
+var game = new Game({},[],0, false)
 io.on('connection',function(socket) {
+  var currentRound = game.currentRound
+  // dictator endows
   socket.on('endow', function(data){
     console.log(data)
+    game.gameState.rounds[currentRound].endowment = 100-parseFloat(data, 10)
     playerRoles.prisoners.forEach(function(prisoner) {
-      io.sockets.connected[prisoner].emit('endowment', 100-parseFloat(data,10))
+      io.sockets.connected[prisoner].emit('endowment', 100-parseFloat(data, 10))
     })
   })
+
+  // players send decision
+  socket.on('choice', function(data){
+    console.log(data)
+
+    if( game.gameState.rounds[currentRound].strategies.length < 2 ) {    // check if player already submitted so we don't double submit
+      if(game.gameState.rounds[currentRound].strategies.filter((playerId) +> playerId === socket.id).length == 0 ){
+      game.gameState.rounds[currentRound].strategies.push({
+        playerId: socket.id,
+        strategy: data,
+      })
+    } else {
+      // someone tried to submit twice
+    }
+  } else {
+    // handle give results
+    // calculate payouts
+    if(game.gameState.rounds[currrentRound].strategies[0] === 'a' &&
+      game.gameState.rounds[currrentRound].strategies[0] === 'r') {// one accept, one reject
+        // handle one accept one reject
+    } else if (game.gameState.rounds[currrentRound].strategies[0] === 'a' &&
+      game.gameState.rounds[currrentRound].strategies[1] === 'a') {// both accept
+        // handle both accept
+    } else {
+      // handle both reject
+    }
+    // emit results
+  }
+})
 
   console.log("New client has connected with id:",socket.id);
 
   if(players.length < 3){
-    players.push(socket)
-    playersListIds.push(socket.id)
+    game.playerList.push(socket.id)
+    // playersListIds.push(socket.id)
     player = new Player(socket.id, `Player${players.length}`, true)
-    game[`Player${players.length}`] == player
+    // game[`Player${players.length}`] == player
 
-    console.log(players.length)
-    let readyToStart = false;
+    console.log(game.playerList.length)
+
     let info = ''
-
     // main game loop - 3 players
     if(players.length === 3){
       info = "The last player has joined, we're ready to start"
-      readyToStart = true
-
+      game.readyToStart = true
+      let currentRound = game.gameState.[currentRound]
       // set player roles (dictator, prisoners)
-      playerRoles = assignRole(playersListIds)
-
-      console.log(playerRoles)
+      game.gameState.rounds[currentRound].playerRoles = assignRole(playersListIds)
+      let playerRoles = game.gameState.rounds[currentRound].playerRoles
+      console.log(game)
 
       if(playerRoles.dictator){
         console.log(playerRoles.dictator)
@@ -103,7 +161,7 @@ io.on('connection',function(socket) {
     } else {
       info = "Hi we are waiting for the other players"
     }
-    io.sockets.emit('info',{info:info, readyToStart:readyToStart})
+    io.sockets.emit('info',{info:info, readyToStart:game.readyToStart})
 
 
 
@@ -113,15 +171,6 @@ io.on('connection',function(socket) {
 
   }
 
-  // players.push(socket)
-  //
-  // if(players.length === 1){
-  //   player = new Player(socket.id, 'Player A', [], true)
-  //   game.playerA= player
-  //
-  // } else if (players.length === 2){
-  //   game.playerB.id =
-  // }
 
 })
 

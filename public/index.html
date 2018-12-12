@@ -8,6 +8,7 @@
     <div id="head" > </div>
     <div id="player-role" > </div>
     <div id="endowment"> </div>
+    <div id="result"> </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
     var socket = io.connect('http://localhost:9000', { 'forceNew': true });
@@ -39,10 +40,26 @@
           </select>
          <button onClick="choose()">Submit</button>`
       })
+
+      socket.on('result', function(data){
+        document.getElementById('result').innerHTML=`
+          <div><p>Your result is the following</p>
+          The dictator kept $ ${data.dictator}
+          You received $ ${data.payout}
+          The Strategy was ${data.strategy}
+          </div>`
+      })
+
       function endow(){
         console.log(document.getElementsByName('keep')[0].value)
         socket.emit('endow',document.getElementsByName('keep')[0].value)
       }
+
+      function choose(){
+        socket.emit('choose', document.getElementsByName('choice')[0].value)
+      }
+
+
       function renderInfo(data){
         console.log(data)
         document.getElementById('head').innerHTML=`<p id="infoMessage">${data.info}</p>`
