@@ -5,18 +5,23 @@
     <title></title>
   </head>
   <body>
+    <div id="head" > </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
     var socket = io.connect('http://localhost:9000', { 'forceNew': true });
 
-      socket.on('info', (data) => {
+      socket.on('info', function (data) {
         console.log('info')
         renderInfo(data)
       })
 
       function renderInfo(data){
         console.log(data)
+        document.getElementById('head').innerHTML=`<p id="infoMessage">${data.info}</p>`
+        if(data.readyToStart){
+          document.getElementById('head').innerHTML=`<p id="infoMessage">${data.info}</p><button>Click here to start</button>`
+        }
       }
     </script>
   </body>

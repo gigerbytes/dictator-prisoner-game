@@ -57,16 +57,21 @@ io.on('connection',(socket) => {
     game[`Player${players.length}`] == player
 
     console.log(players.length)
+    let readyToStart = false;
     let info = ''
     if(players.length === 3){
       info = "The last player has joined, we're ready to start"
+      readyToStart = true
     } else {
       info = "Hi we are waiting for the other players"
     }
-    io.sockets.emit('info',info)
+    io.sockets.emit('info',{info:info, readyToStart:readyToStart})
+
+  } else {
+    io.sockets.emit('info',{info:'Sorry there are too many players in the game room, try again later',readyToStart:false})
+
   }
 
-  io.sockets.emit('info','hi')
   // players.push(socket)
   //
   // if(players.length === 1){
