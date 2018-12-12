@@ -56,15 +56,17 @@ io.on('connection',(socket) => {
     player = new Player(socket.id, `Player${players.length}`, true)
     game[`Player${players.length}`] == player
 
+    console.log(players.length)
+    let info = ''
     if(players.length === 3){
       info = "The last player has joined, we're ready to start"
     } else {
       info = "Hi we are waiting for the other players"
     }
-    socket.broadcast.emit(info)
+    io.sockets.emit('info',info)
   }
 
-
+  io.sockets.emit('info','hi')
   // players.push(socket)
   //
   // if(players.length === 1){
