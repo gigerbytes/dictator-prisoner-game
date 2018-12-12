@@ -18,15 +18,21 @@
       })
 
       socket.on('role_assignment', function(data) {
-        document.getElementById('player-role').innerHTML=`<p>${data}</p>`
+        if(data.isDictator){
+          document.getElementById('player-role').innerHTML=`
+            <p id="role-message">You are the Dictator</p>
+            <p>How much do you want to keep? <input name="keep" type="text" /></p>
+             <button>Submit</button>`
+        } else {
+          document.getElementById('player-role').innerHTML=`<p id="role-message">You are a player, wait for the Dictator's endowment.</p>`
+
+        }
       })
 
       function renderInfo(data){
         console.log(data)
         document.getElementById('head').innerHTML=`<p id="infoMessage">${data.info}</p>`
-        if(data.readyToStart){
-          document.getElementById('head').innerHTML=`<p id="infoMessage">${data.info}</p><button>Click here to start</button>`
-        }
+
       }
     </script>
   </body>

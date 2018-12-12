@@ -76,17 +76,20 @@ io.on('connection',(socket) => {
     if(players.length === 3){
       info = "The last player has joined, we're ready to start"
       readyToStart = true
+
       // set player roles (dictator, prisoners)
       let playerRoles = assignRole(playersListIds)
+
       console.log(playerRoles)
+
       if(playerRoles.dictator){
         console.log(playerRoles.dictator)
-        io.sockets.connected[playerRoles.dictator].emit('role_assignment', 'You are the dictator')
+        io.sockets.connected[playerRoles.dictator].emit('role_assignment', {isDictator: true})
       }
       playerRoles.prisoners.forEach(function(prisoner){
-        console.log("emit prisoner")
+        console.log("emit prisoner  ")
         console.log(prisoner)
-        io.sockets.connected[prisoner].emit('role_assignment', 'You are a player')
+        io.sockets.connected[prisoner].emit('role_assignment', {isDictator: false})
       })
 
     } else {
@@ -112,4 +115,10 @@ io.on('connection',(socket) => {
   //   game.playerB.id =
   // }
 
+})
+
+io.on('disconnect', function(){
+  playersListIds = playersListIds.filter(function(player) {
+    return player.id !== socket.id
+  })
 })
