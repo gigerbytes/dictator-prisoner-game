@@ -29,15 +29,26 @@ function Game(playerA, playerB, playerC, numbers, operators, movingPlayers){
 }
 //
 players = []
+playersListIds = []
 game = new Game()
 //
 //
-// function assignRole(playerList){
-//   let dictatorIndex = Math.floor(Math.random()*playerList.length)
-//   var dictator = playerList[dictatorIndex]
-//   var prisoners = playerList.splice(dictatorIndex, 1) // remove 1 element from list from dictatorIndex
-//
-// }
+function assignRole(playerList){
+  console.log(playerList)
+  let dictatorIndex = Math.floor(Math.random()*playerList.length)
+  console.log(playerList.forEach(function(player) { console.log(player.id)}))
+  var dictator = playerList[dictatorIndex]
+
+  prisoners = playerList.filter(function(player){
+    return player !== dictator
+  })
+  var gameRoles =  {dictator:dictator, prisoners:prisoners}
+  console.log(gameRoles.dictator)
+  console.log('players')
+  console.log(gameRoles.prisoners.forEach(function(prisoner){console.log(prisoner)}))
+  console.log(gameRoles)
+  return gameRoles
+}
 
 // function dictatorStep(dictator, prisoners)=>{
 //
@@ -53,22 +64,41 @@ io.on('connection',(socket) => {
 
   if(players.length < 3){
     players.push(socket)
+    playersListIds.push(socket.id)
     player = new Player(socket.id, `Player${players.length}`, true)
     game[`Player${players.length}`] == player
 
     console.log(players.length)
     let readyToStart = false;
     let info = ''
+
+    // main game loop - 3 players
     if(players.length === 3){
       info = "The last player has joined, we're ready to start"
       readyToStart = true
+      // set player roles (dictator, prisoners)
+      let playerRoles = assignRole(playersListIds)
+      console.log(playerRoles)
+      if(playerRoles.dictator){
+        console.log(playerRoles.dictator)
+        io.sockets.connected[playerRoles.dictator].emit('role_assignment', 'You are the dictator')
+      }
+      playerRoles.prisoners.forEach(function(prisoner){
+        console.log("emit prisoner")
+        console.log(prisoner)
+        io.sockets.connected[prisoner].emit('role_assignment', 'You are a player')
+      })
+
     } else {
       info = "Hi we are waiting for the other players"
     }
     io.sockets.emit('info',{info:info, readyToStart:readyToStart})
 
+
+
+    // end main game loop
   } else {
-    io.sockets.emit('info',{info:'Sorry there are too many players in the game room, try again later',readyToStart:false})
+    io.sockets.connected[socket.id].emit('info',{info:'Sorry there are too many players in the game room, try again later',readyToStart:false})
 
   }
 

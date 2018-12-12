@@ -6,6 +6,7 @@
   </head>
   <body>
     <div id="head" > </div>
+    <div id="player-role" > </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -14,6 +15,10 @@
       socket.on('info', function (data) {
         console.log('info')
         renderInfo(data)
+      })
+
+      socket.on('role_assignment', function(data) {
+        document.getElementById('player-role').innerHTML=`<p>${data}</p>`
       })
 
       function renderInfo(data){
