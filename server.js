@@ -30,6 +30,7 @@ function Game(playerA, playerB, playerC, numbers, operators, movingPlayers){
 //
 players = []
 playersListIds = []
+playerRoles = {}
 game = new Game()
 //
 //
@@ -59,7 +60,14 @@ server.listen(9000, function () {
 });
 
 
-io.on('connection',(socket) => {
+io.on('connection',function(socket) {
+  socket.on('endow', function(data){
+    console.log(data)
+    playerRoles.prisoners.forEach(function(prisoner) {
+      io.sockets.connected[prisoner].emit('endowment', 100-parseFloat(data,10))
+    })
+  })
+
   console.log("New client has connected with id:",socket.id);
 
   if(players.length < 3){
@@ -78,7 +86,7 @@ io.on('connection',(socket) => {
       readyToStart = true
 
       // set player roles (dictator, prisoners)
-      let playerRoles = assignRole(playersListIds)
+      playerRoles = assignRole(playersListIds)
 
       console.log(playerRoles)
 

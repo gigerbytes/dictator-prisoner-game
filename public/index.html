@@ -7,7 +7,7 @@
   <body>
     <div id="head" > </div>
     <div id="player-role" > </div>
-
+    <div id="endowment"> </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
     var socket = io.connect('http://localhost:9000', { 'forceNew': true });
@@ -21,14 +21,28 @@
         if(data.isDictator){
           document.getElementById('player-role').innerHTML=`
             <p id="role-message">You are the Dictator</p>
-            <p>How much do you want to keep? <input name="keep" type="text" /></p>
-             <button>Submit</button>`
+            <p>How much do you want to keep? <input name="keep" type="number" /></p>
+             <button onClick="endow()">Submit</button>`
         } else {
           document.getElementById('player-role').innerHTML=`<p id="role-message">You are a player, wait for the Dictator's endowment.</p>`
 
         }
       })
 
+      socket.on('endowment', function(data){
+        document.getElementById('endowment').innerHTML=`
+        <p id="endowment-amount">The dictator endowed ${data}</p>
+        <p>Do you accept or reject?
+          <select name="choice">
+          <option value='a'> Accept </option>
+          <option value='r'> Reject </option>
+          </select>
+         <button onClick="choose()">Submit</button>`
+      })
+      function endow(){
+        console.log(document.getElementsByName('keep')[0].value)
+        socket.emit('endow',document.getElementsByName('keep')[0].value)
+      }
       function renderInfo(data){
         console.log(data)
         document.getElementById('head').innerHTML=`<p id="infoMessage">${data.info}</p>`
