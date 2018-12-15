@@ -23,7 +23,7 @@
           document.getElementById('player-role').innerHTML=`
             <p id="role-message">You are the Dictator</p>
             <p>How much do you want to keep? <input name="keep" type="number" /></p>
-             <button onClick="endow()">Submit</button>`
+             <button id="submit-button" onClick="endow()">Submit</button>`
         } else {
           document.getElementById('player-role').innerHTML=`<p id="role-message">You are a player, wait for the Dictator's endowment.</p>`
 
@@ -38,7 +38,7 @@
           <option value='a'> Accept </option>
           <option value='r'> Reject </option>
           </select>
-         <button onClick="choose()">Submit</button>`
+         <button  id="submit-button" onClick="choose()">Submit</button>`
       })
 
       socket.on('result', function(data){
@@ -57,6 +57,9 @@
 
       function choose(){
         socket.emit('choose', document.getElementsByName('choice')[0].value)
+         document.getElementsByName('choice')[0].setAttribute('disabled',true)
+          document.getElementsByName('choice')[0].setAttribute('disabled',true)
+           document.getElementById('submit-button').setAttribute('disabled',true)
       }
 
 

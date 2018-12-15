@@ -76,8 +76,7 @@ function assignRole(playerList) {
 function assignPayouts(game) {
   let currentRound = game.round
   if (
-    game.gameState.rounds[currentRound].strategies[0] === 'a' &&
-    game.gameState.rounds[currentRound].strategies[0] === 'r'
+    game.gameState.rounds[currentRound].strategies.filter((prisoner) => prisoner.strategy==='a').length === 1
 
   ) {
     // one accept, one reject
@@ -86,9 +85,12 @@ function assignPayouts(game) {
     let prisonerAcceptPayout = game.gameState[currentRound].endowment
 
     let dictatorId = game.gameState.round[currentRound].playerRoles.dictator
+
     game.gameState.round[currentRound].payouts = {playerId: dictatorId, payout:dictatorPayout}
+    prisonerAcceptId = game.gameState.round[currentRound].strategies.filter((prisoner)=> prisoner.strategy === 'a')[0].playerId
+
     game.gameState.round[currentRound].playerRoles.prisoners.forEach((prisoner)=>{
-      if(prisoner===prisonerAcceptId){
+      if(prisoner === prisonerAcceptId){
         game.gameState.round[currentRound].payouts = {playerId:prisoner, payout:prisonerAcceptPayout}
       } else {
         game.gameState.round[currentRound].payouts = {playerId:prisoner, payout:0}
@@ -97,8 +99,7 @@ function assignPayouts(game) {
 
 
   } else if (
-    game.gameState.rounds[currentRound].strategies[0] === 'a' &&
-    game.gameState.rounds[currentRound].strategies[1] === 'a'
+    game.gameState.rounds[currentRound].strategies.filter((prisoner) => prisoner.strategy==='a').length === 2
   ) {
     // both accept
     // handle both accept
@@ -112,7 +113,8 @@ function assignPayouts(game) {
       game.gameState.round[currentRound].payouts = {playerId:prisoner, payout:playerPayout}
     })
 
-  } else {
+  } else { // game.gameState.rounds[currentRound].strategies.filter((prisoner) => prisoner.strategy==='r').length === 2
+
     // handle both reject
     let dictatorPayout = 0
     let playerPayout = 25
@@ -126,14 +128,13 @@ function assignPayouts(game) {
   }
   return game
 }
-// function dictatorStep(dictator, prisoners)=>{
-//
-// }
 
 function addRound(game){
   console.log(game.gameState.rounds)
   return game.gameState.rounds.push({
-    playerRoles:{}
+    playerRoles:{},
+    strategies:[],
+    payouts:[]
   })
 }
 
@@ -166,10 +167,10 @@ io.on('connection', function(socket) {
   })
 
   // players send decision
-  socket.on('choice', function(data) {
+  socket.on('choose', function(data) {
     console.log(data)
 
-    if (game.gameState.rounds[currentRound].strategies.length < 2) {
+    if (game.gameState.rounds[currentRound].strategies.length < 1) {
       // check if player already submitted so we don't double submit
       if (
         game.gameState.rounds[currentRound].strategies.filter(
@@ -182,14 +183,24 @@ io.on('connection', function(socket) {
         })
       } else {
         // someone tried to submit twice
-        calculatePayouts(game)
+        io.sockets.connected[socket.id].emit['error', 'Sorry you already submitted!']
       }
     } else {
       // handle give results
       // calculate payouts
 
       // emit results
+      game = assignPayouts(game)
+
+      game.gameState.rounds[currentround].strategies.forEach((player) => {
+        io.sockets.connected[player.playerId].emit('payout', player.payout)
+      })
     }
+  })
+
+  socket.on('newRound', function(data) {
+    game.round = game.round+1
+    game = game.addRound()
   })
 
   console.log('New client has connected with id:', socket.id)
