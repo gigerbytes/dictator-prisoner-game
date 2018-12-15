@@ -81,19 +81,19 @@ function assignPayouts(game) {
   ) {
     // one accept, one reject
     // handle one accept one reject
-    let dictatorPayout = 100 - game.gameState[currentRound].endowment
-    let prisonerAcceptPayout = game.gameState[currentRound].endowment
+    let dictatorPayout = 100 - game.gameState.rounds[currentRound].endowment
+    let prisonerAcceptPayout = game.gameState.rounds[currentRound].endowment
 
-    let dictatorId = game.gameState.round[currentRound].playerRoles.dictator
+    let dictatorId = game.gameState.rounds[currentRound].playerRoles.dictator
 
-    game.gameState.round[currentRound].payouts = {playerId: dictatorId, payout:dictatorPayout}
-    prisonerAcceptId = game.gameState.round[currentRound].strategies.filter((prisoner)=> prisoner.strategy === 'a')[0].playerId
+    game.gameState.rounds[currentRound].payouts.push({playerId: dictatorId, payout:dictatorPayout})
+    prisonerAcceptId = game.gameState.rounds[currentRound].strategies.filter((prisoner)=> prisoner.strategy === 'a')[0].playerId
 
-    game.gameState.round[currentRound].playerRoles.prisoners.forEach((prisoner)=>{
+    game.gameState.rounds[currentRound].playerRoles.prisoners.forEach((prisoner)=>{
       if(prisoner === prisonerAcceptId){
-        game.gameState.round[currentRound].payouts = {playerId:prisoner, payout:prisonerAcceptPayout}
+        game.gameState.rounds[currentRound].payouts.push({playerId:prisoner, payout:prisonerAcceptPayout})
       } else {
-        game.gameState.round[currentRound].payouts = {playerId:prisoner, payout:0}
+        game.gameState.rounds[currentRound].payouts.push({playerId:prisoner, payout:0})
       }
     })
 
@@ -103,14 +103,14 @@ function assignPayouts(game) {
   ) {
     // both accept
     // handle both accept
-    let dictatorPayout = 100 - game.gameState[currentRound].endowment
-    let playerPayout = (1 / 2) * game.gameState[currentRound].endowment
+    let dictatorPayout = 100 - game.gameState.rounds[currentRound].endowment
+    let playerPayout = (1 / 2) * game.gameState.rounds[currentRound].endowment
 
-    let dictatorId = game.gameState.round[currentRound].playerRoles.dictator
-    game.gameState.round[currentRound].payouts = {playerId: dictatorId, payout:dictatorPayout}
+    let dictatorId = game.gameState.rounds[currentRound].playerRoles.dictator
+    game.gameState.rounds[currentRound].payouts.push({playerId: dictatorId, payout:dictatorPayout})
 
-    game.gameState.round[currentRound].playerRoles.prisoners.forEach((prisoner)=>{
-      game.gameState.round[currentRound].payouts = {playerId:prisoner, payout:playerPayout}
+    game.gameState.rounds[currentRound].playerRoles.prisoners.forEach((prisoner)=>{
+      game.gameState.rounds[currentRound].payouts.push({playerId:prisoner, payout:playerPayout})
     })
 
   } else { // game.gameState.rounds[currentRound].strategies.filter((prisoner) => prisoner.strategy==='r').length === 2
@@ -119,11 +119,11 @@ function assignPayouts(game) {
     let dictatorPayout = 0
     let playerPayout = 25
 
-    let dictatorId = game.gameState.round[currentRound].playerRoles.dictator
-    game.gameState.round[currentRound].payouts = {playerId: dictatorId, payout:dictatorPayout}
+    let dictatorId = game.gameState.rounds[currentRound].playerRoles.dictator
+    game.gameState.rounds[currentRound].payouts.push({playerId: dictatorId, payout:dictatorPayout})
 
-    game.gameState.round[currentRound].playerRoles.prisoners.forEach((prisoner)=>{
-      game.gameState.round[currentRound].payouts = {playerId:prisoner, payout:25}
+    game.gameState.rounds[currentRound].playerRoles.prisoners.forEach((prisoner)=>{
+      game.gameState.rounds[currentRound].payouts.push({playerId:prisoner, payout:25})
     })
   }
   return game
@@ -190,9 +190,10 @@ io.on('connection', function(socket) {
       // calculate payouts
 
       // emit results
+      console.log(game.gameState.rounds)
       game = assignPayouts(game)
-
-      game.gameState.rounds[currentround].strategies.forEach((player) => {
+      console.log( game.gameState.rounds[currentRound])
+      game.gameState.rounds[currentRound].strategies.forEach((player) => {
         io.sockets.connected[player.playerId].emit('payout', player.payout)
       })
     }
