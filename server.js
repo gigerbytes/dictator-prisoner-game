@@ -73,7 +73,59 @@ function assignRole(playerList) {
   return playerRoles
 }
 
-function assignPayouts(game) {}
+function assignPayouts(game) {
+  let currentRound = game.round
+  if (
+    game.gameState.rounds[currentRound].strategies[0] === 'a' &&
+    game.gameState.rounds[currentRound].strategies[0] === 'r'
+
+  ) {
+    // one accept, one reject
+    // handle one accept one reject
+    let dictatorPayout = 100 - game.gameState[currentRound].endowment
+    let prisonerAcceptPayout = game.gameState[currentRound].endowment
+
+    let dictatorId = game.gameState.round[currentRound].playerRoles.dictator
+    game.gameState.round[currentRound].payouts = {playerId: dictatorId, payout:dictatorPayout}
+    game.gameState.round[currentRound].playerRoles.prisoners.forEach((prisoner)=>{
+      if(prisoner===prisonerAcceptId){
+        game.gameState.round[currentRound].payouts = {playerId:prisoner, payout:prisonerAcceptPayout}
+      } else {
+        game.gameState.round[currentRound].payouts = {playerId:prisoner, payout:0}
+      }
+    })
+
+
+  } else if (
+    game.gameState.rounds[currentRound].strategies[0] === 'a' &&
+    game.gameState.rounds[currentRound].strategies[1] === 'a'
+  ) {
+    // both accept
+    // handle both accept
+    let dictatorPayout = 100 - game.gameState[currentRound].endowment
+    let playerPayout = (1 / 2) * game.gameState[currentRound].endowment
+
+    let dictatorId = game.gameState.round[currentRound].playerRoles.dictator
+    game.gameState.round[currentRound].payouts = {playerId: dictatorId, payout:dictatorPayout}
+
+    game.gameState.round[currentRound].playerRoles.prisoners.forEach((prisoner)=>{
+      game.gameState.round[currentRound].payouts = {playerId:prisoner, payout:playerPayout}
+    })
+
+  } else {
+    // handle both reject
+    let dictatorPayout = 0
+    let playerPayout = 25
+
+    let dictatorId = game.gameState.round[currentRound].playerRoles.dictator
+    game.gameState.round[currentRound].payouts = {playerId: dictatorId, payout:dictatorPayout}
+
+    game.gameState.round[currentRound].playerRoles.prisoners.forEach((prisoner)=>{
+      game.gameState.round[currentRound].payouts = {playerId:prisoner, payout:25}
+    })
+  }
+  return game
+}
 // function dictatorStep(dictator, prisoners)=>{
 //
 // }
@@ -130,32 +182,12 @@ io.on('connection', function(socket) {
         })
       } else {
         // someone tried to submit twice
+        calculatePayouts(game)
       }
     } else {
       // handle give results
       // calculate payouts
-      if (
-        game.gameState.rounds[currrentRound].strategies[0] === 'a' &&
-        game.gameState.rounds[currrentRound].strategies[0] === 'r'
-      ) {
-        // one accept, one reject
-        // handle one accept one reject
-        let dictatorPayout = 100 - game.gameState[currentRound].endowment
-        let acceptPlayerPayout = game.gameState[currentRound].endowment
-        let rejectPlayerPayout = 0
-      } else if (
-        game.gameState.rounds[currrentRound].strategies[0] === 'a' &&
-        game.gameState.rounds[currrentRound].strategies[1] === 'a'
-      ) {
-        // both accept
-        // handle both accept
-        let dictaroPayout = 100 - game.gameState[currentRound].endowment
-        let playerPayout = (1 / 2) * game.gameState[currentRound].endowment
-      } else {
-        // handle both reject
-        let dictatorPayout = 0
-        let playerPayout = 25
-      }
+
       // emit results
     }
   })
