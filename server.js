@@ -1,26 +1,19 @@
-var express = require('express');
-var app = express();
-var server = require('http').Server(app);
+var express = require('express')
+var app = express()
+var server = require('http').Server(app)
 var io = require('socket.io')(server)
 app.set('view engine', 'ejs')
 
-app.use(express.static(__dirname + '/public'));
-app.get('/', function (req, res) {
+app.use(express.static(__dirname + '/public'))
+app.get('/', function(req, res) {
   res.render('index')
-});
-
-//
-function Player(id, name, numbers, isDictator ){// role == dictator || p/ayer
-  this.id=id
-  this.name = name
-  this.numbers = numbers
-  this.isDictator = isDictator // is playing when role == true
-}
+})
 
 players = []
 playersListIds = []
 playerRoles = {}
 gameState = {}
+
 // Game state looks like this:
 // {
 //   currentRound: 2,
@@ -47,134 +40,179 @@ gameState = {}
 //  ]
 // }
 
-
-function Game(gameState, playerList,round, readyToStart){
+function Game(gameState, playerList, round, readyToStart) {
   Game.gameState = gameState // object
   Game.playerList = playerList // list of players
   Game.gameState.currentRound = round // which round?
   Game.readyToStart = readyToStart
 }
-//
 
-//
-//
-function assignRole(playerList){
+function assignRole(playerList) {
   console.log(playerList)
-  let dictatorIndex = Math.floor(Math.random()*playerList.length)
-  console.log(playerList.forEach(function(player) { console.log(player.id)}))
+  let dictatorIndex = Math.floor(Math.random() * playerList.length)
+  console.log(
+    playerList.forEach(function(player) {
+      console.log(player.id)
+    })
+  )
   var dictator = playerList[dictatorIndex]
 
-  prisoners = playerList.filter(function(player){
+  prisoners = playerList.filter(function(player) {
     return player !== dictator
   })
-  var playerRoles =  {dictator:dictator, prisoners:prisoners}
+
+  var playerRoles = { dictator: dictator, prisoners: prisoners }
   console.log(playerRoles.dictator)
   console.log('players')
-  console.log(playerRoles.prisoners.forEach(function(prisoner){console.log(prisoner)}))
+  console.log(
+    playerRoles.prisoners.forEach(function(prisoner) {
+      console.log(prisoner)
+    })
+  )
   console.log(playerRoles)
   return playerRoles
 }
 
-function assignPayouts(game){
-
-}
+function assignPayouts(game) {}
 // function dictatorStep(dictator, prisoners)=>{
 //
 // }
 
-server.listen(9000, function () {
-  console.log(`Listening on ${server.address().port}`);
-});
+function addRound(game){
+  console.log(game.gameState.rounds)
+  return game.gameState.rounds.push({
+    playerRoles:{}
+  })
+}
 
-var game = new Game({},[],0, false)
-io.on('connection',function(socket) {
-  var currentRound = game.currentRound
+server.listen(9000, function() {
+  console.log(`Listening on ${server.address().port}`)
+})
+
+var game = new Game({}, [], 0, false)
+console.log(game.playerList)
+game.gameState ={rounds:[]}
+game.playerList = []
+game.round = 0
+game.readyToStart = false
+
+game.rounds = addRound(game)
+console.log(game)
+
+io.on('connection', function(socket) {
+  var currentRound = game.round
   // dictator endows
-  socket.on('endow', function(data){
+  socket.on('endow', function(data) {
     console.log(data)
-    game.gameState.rounds[currentRound].endowment = 100-parseFloat(data, 10)
-    playerRoles.prisoners.forEach(function(prisoner) {
-      io.sockets.connected[prisoner].emit('endowment', 100-parseFloat(data, 10))
+    game.gameState.rounds[currentRound].endowment = 100 - parseFloat(data, 10)
+    game.gameState.rounds[currentRound].playerRoles.prisoners.forEach(function(prisoner) {
+      io.sockets.connected[prisoner].emit(
+        'endowment',
+        100 - parseFloat(data, 10)
+      )
     })
   })
 
   // players send decision
-  socket.on('choice', function(data){
+  socket.on('choice', function(data) {
     console.log(data)
 
-    if( game.gameState.rounds[currentRound].strategies.length < 2 ) {    // check if player already submitted so we don't double submit
-      if(game.gameState.rounds[currentRound].strategies.filter((playerId) +> playerId === socket.id).length == 0 ){
-      game.gameState.rounds[currentRound].strategies.push({
-        playerId: socket.id,
-        strategy: data,
-      })
+    if (game.gameState.rounds[currentRound].strategies.length < 2) {
+      // check if player already submitted so we don't double submit
+      if (
+        game.gameState.rounds[currentRound].strategies.filter(
+          playerId => playerId === socket.id
+        ).length == 0
+      ) {
+        game.gameState.rounds[currentRound].strategies.push({
+          playerId: socket.id,
+          strategy: data
+        })
+      } else {
+        // someone tried to submit twice
+      }
     } else {
-      // someone tried to submit twice
-    }
-  } else {
-    // handle give results
-    // calculate payouts
-    if(game.gameState.rounds[currrentRound].strategies[0] === 'a' &&
-      game.gameState.rounds[currrentRound].strategies[0] === 'r') {// one accept, one reject
+      // handle give results
+      // calculate payouts
+      if (
+        game.gameState.rounds[currrentRound].strategies[0] === 'a' &&
+        game.gameState.rounds[currrentRound].strategies[0] === 'r'
+      ) {
+        // one accept, one reject
         // handle one accept one reject
-    } else if (game.gameState.rounds[currrentRound].strategies[0] === 'a' &&
-      game.gameState.rounds[currrentRound].strategies[1] === 'a') {// both accept
+        let dictatorPayout = 100 - game.gameState[currentRound].endowment
+        let acceptPlayerPayout = game.gameState[currentRound].endowment
+        let rejectPlayerPayout = 0
+      } else if (
+        game.gameState.rounds[currrentRound].strategies[0] === 'a' &&
+        game.gameState.rounds[currrentRound].strategies[1] === 'a'
+      ) {
+        // both accept
         // handle both accept
-    } else {
-      // handle both reject
+        let dictaroPayout = 100 - game.gameState[currentRound].endowment
+        let playerPayout = (1 / 2) * game.gameState[currentRound].endowment
+      } else {
+        // handle both reject
+        let dictatorPayout = 0
+        let playerPayout = 25
+      }
+      // emit results
     }
-    // emit results
-  }
-})
+  })
 
-  console.log("New client has connected with id:",socket.id);
+  console.log('New client has connected with id:', socket.id)
 
-  if(players.length < 3){
+  if (game.playerList.length < 3) {
     game.playerList.push(socket.id)
     // playersListIds.push(socket.id)
-    player = new Player(socket.id, `Player${players.length}`, true)
+    // player = new Player(socket.id, `Player${players.length}`, true)
     // game[`Player${players.length}`] == player
 
     console.log(game.playerList.length)
 
     let info = ''
     // main game loop - 3 players
-    if(players.length === 3){
+    if (game.playerList.length === 3) {
       info = "The last player has joined, we're ready to start"
       game.readyToStart = true
-      let currentRound = game.gameState.[currentRound]
+      let currentRound = game.round
       // set player roles (dictator, prisoners)
-      game.gameState.rounds[currentRound].playerRoles = assignRole(playersListIds)
+      game.gameState.rounds[currentRound].playerRoles = assignRole(
+        game.playerList
+      )
+      console.log(game.gameState.rounds[0])
       let playerRoles = game.gameState.rounds[currentRound].playerRoles
       console.log(game)
 
-      if(playerRoles.dictator){
+      if (playerRoles.dictator) {
         console.log(playerRoles.dictator)
-        io.sockets.connected[playerRoles.dictator].emit('role_assignment', {isDictator: true})
+        io.sockets.connected[playerRoles.dictator].emit('role_assignment', {
+          isDictator: true
+        })
       }
-      playerRoles.prisoners.forEach(function(prisoner){
-        console.log("emit prisoner  ")
+      playerRoles.prisoners.forEach(function(prisoner) {
+        console.log('emit prisoner  ')
         console.log(prisoner)
-        io.sockets.connected[prisoner].emit('role_assignment', {isDictator: false})
+        io.sockets.connected[prisoner].emit('role_assignment', {
+          isDictator: false
+        })
       })
-
     } else {
-      info = "Hi we are waiting for the other players"
+      info = 'Hi we are waiting for the other players'
     }
-    io.sockets.emit('info',{info:info, readyToStart:game.readyToStart})
-
-
+    io.sockets.emit('info', { info: info, readyToStart: game.readyToStart })
 
     // end main game loop
   } else {
-    io.sockets.connected[socket.id].emit('info',{info:'Sorry there are too many players in the game room, try again later',readyToStart:false})
-
+    io.sockets.connected[socket.id].emit('info', {
+      info:
+        'Sorry there are too many players in the game room, try again later',
+      readyToStart: false
+    })
   }
-
-
 })
 
-io.on('disconnect', function(){
+io.on('disconnect', function() {
   playersListIds = playersListIds.filter(function(player) {
     return player.id !== socket.id
   })
