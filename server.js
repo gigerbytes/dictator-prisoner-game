@@ -79,6 +79,11 @@ function createGame(roomId, playerList){
 }
 
 
+function getGame(roomId){
+  game = gameList.filter((game) => game.id == roomId)[0]
+  return game ? game : null // return game or null
+}
+
 io.on('connection', socket => {
   socket.on('room', function(room) {
     // room is a string defining the room to join
@@ -94,10 +99,10 @@ io.on('connection', socket => {
         var game = createGame(room, io.sockets.clients(room))
         io.to(room).emit('info', { info: 'The game is ready to start', readyToStart: true })
         game.assignRoles()
-        
+
         // emit role assignment if dictator or not
         game.currentState.playerRoleDict.forEach((player) => {
-          io.sockets.connected[player].emit('role_assignment', {
+          io.sockets.connected[player.playerId].emit('role_assignment', {
                     isDictator: player.role === 'dictator' ? true : false
                   })
         })
@@ -109,6 +114,17 @@ io.on('connection', socket => {
         readyToStart: false
       })
     }
+  })
+
+  socket.on('endow', function(data){
+    // get game object with appropriate room
+    var game = getGame(data.roomId)
+    game.currentState.endowment = data.endowment
+    // emit choices for the prisoners
+    // using the playerRoles over here because easier to have the prisoners array
+    game.currentState.playerRoles.prisoners.forEach((prisoner) => {
+      io.sockets.connected[prisoner].emit('endow')
+    })
   })
 })
 
