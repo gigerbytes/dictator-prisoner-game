@@ -193,8 +193,17 @@ io.on('connection', function(socket) {
       console.log(game.gameState.rounds)
       game = assignPayouts(game)
       console.log( game.gameState.rounds[currentRound])
-      game.gameState.rounds[currentRound].strategies.forEach((player) => {
-        io.sockets.connected[player.playerId].emit('payout', player.payout)
+      // need to do custom object per player
+      // double loop?
+      game.gameState.rounds[currentRound].strategies.forEach((currentPlayer) => { // add role to list?
+        // currentPlayerObject = {
+        //   myPayout : currentPlayer.payout
+        //   dictatorPayout :
+        // }
+        game.gameState.rounds[currentRound].strategies.forEach((player) => {
+          currentPlayerObject.id = currentPlayer.playerId
+        })
+        io.sockets.connected[player.playerId].emit('result', player.payout)
       })
     }
   })
