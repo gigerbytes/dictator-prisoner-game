@@ -46,6 +46,8 @@ class Game = {
     this.round = round
     this.playerList = playerList
     this.currentState = {}
+    this.currentState.strategies =[]
+    this.currentState.payouts =[]
     this.previousStates=[]
   }
 
@@ -70,6 +72,60 @@ class Game = {
     console.log(this.currentState.playerRoles)
     console.log(this.currentState.playerRoleDict)
   }
+
+  function calculatePayouts(){
+    if (
+       this.currentState.strategies.filter((player) => player.strategy==='a').length === 1
+
+     ) {
+       // one accept, one reject
+       // handle one accept one reject
+       let dictatorPayout = 100 - this.currentState.endowment
+       let prisonerAcceptPayout = this.currentState.endowment
+
+       let dictatorId = this.currentState.playerRoles.dictator
+
+       this.currentState.payouts.push({playerId: dictatorId, payout:dictatorPayout})
+       prisonerAcceptId = this.currentState.strategies.filter((prisoner)=> prisoner.strategy === 'a')[0].playerId
+
+       this.currentState.playerRoles.prisoners.forEach((prisoner)=>{
+         if(prisoner === prisonerAcceptId){
+           this.currentState.payouts.push({playerId:prisoner, payout:prisonerAcceptPayout})
+         } else {
+           this.currentState.payouts.push({playerId:prisoner, payout:0})
+         }
+       })
+
+
+     } else if (
+       this.currentState.strategies.filter((prisoner) => prisoner.strategy==='a').length === 2
+     ) {
+       // both accept
+       // handle both accept
+       let dictatorPayout = 100 - this.currentState.endowment
+       let playerPayout = (1 / 2) * this.currentState.endowment
+
+       let dictatorId = this.currentState.playerRoles.dictator
+       this.currentState.payouts.push({playerId: dictatorId, payout:dictatorPayout})
+
+       this.currentState.playerRoles.prisoners.forEach((prisoner)=>{
+         this.currentState.payouts.push({playerId:prisoner, payout:playerPayout})
+       })
+
+     } else { // this.currentState.strategies.filter((prisoner) => prisoner.strategy==='r').length === 2
+
+       // handle both reject
+       let dictatorPayout = 0
+       let playerPayout = 25
+
+       let dictatorId = this.currentState.playerRoles.dictator
+       this.currentState.payouts.push({playerId: dictatorId, payout:dictatorPayout})
+
+       this.currentState.playerRoles.prisoners.forEach((prisoner)=>{
+         this.currentState.payouts.push({playerId:prisoner, payout:25})
+       })
+     }
+  }
 }
 
 function createGame(roomId, playerList){
@@ -85,7 +141,7 @@ function getGame(roomId){
 }
 
 io.on('connection', socket => {
-  socket.on('room', function(room) {
+  socket.on('room', (room) => {
     // room is a string defining the room to join
     if (io.sockets.clients(room).length <= 3) {
       socket.join(room)
@@ -116,15 +172,33 @@ io.on('connection', socket => {
     }
   })
 
-  socket.on('endow', function(data){
+  socket.on('endow', (data) => {
     // get game object with appropriate room
     var game = getGame(data.roomId)
+    if(!game){ throw new Error('no game found')}
     game.currentState.endowment = data.endowment
     // emit choices for the prisoners
     // using the playerRoles over here because easier to have the prisoners array
     game.currentState.playerRoles.prisoners.forEach((prisoner) => {
       io.sockets.connected[prisoner].emit('endow')
     })
+  })
+
+  socket.on('choose', (data) => {
+    var game = getGame(data.roomId)
+    if(!game){ throw new Error('no game found')}
+    // can now do payout calculations based on answers of the prisoners
+    // check if person submitted already
+    if(!game.currentState.submissions[socket.id]{
+      // has not submitted yet!
+      game.currentState.strategies.push({playerId: socket.id, strategy: data.strategy})
+    }) else {
+      // emit already submitted error
+    }
+    //calculate payouts
+    if(game.currentState.strategies.count == 2){
+      game.calculatePayouts()
+    }
   })
 })
 
