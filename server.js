@@ -45,10 +45,19 @@ class Game = {
     this.id = id
     this.round = round
     this.playerList = playerList
-    this.currentState = {}
+    this.currentState = {roundId = this.round}
     this.currentState.strategies =[]
     this.currentState.payouts =[]
     this.previousStates=[]
+  }
+
+  function nextRound(){
+    if(this.round>5){
+      return "game over"
+    }
+    this.round = this.round +1
+    this.previosStates.push(this.currentState)
+    this.currentState = {roundId = this.round}
   }
 
   function assignRoles(){
