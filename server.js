@@ -298,9 +298,17 @@ io.on('connection', socket => {
         info: 'waiting for the next round to start'
       })
     } else {
-      game.nextRound()
-        ? this.to(data.room).emit('nextRound')
-        : this.to(data.room).emit('endGame')
+      if(game.nextRound){
+        game.assignRoles()
+        // emit role assignment if dictator or not
+        game.currentState.playerRoleDict.forEach(player => {
+          io.sockets.connected[player.playerId].emit('role_assignment', {
+            isDictator: player.role === 'dictator' ? true : false
+          })
+        })
+      }else {
+        this.to(data.room).emit('endGame')
+      }
     }
   })
   // ****

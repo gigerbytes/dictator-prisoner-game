@@ -19,6 +19,12 @@
         renderInfo(data)
       })
 
+      socket.on('endGame', function(data){
+        document.getElementById('info').innerHTML="<div>Game over. Thank you for playing.</div>"
+        document.getElementById('player-role').innerHTML="<div></div>"
+        document.getElementById('endowment').innerHTML="<div></div>"
+        document.getElementById('result').innerHTML="<div></div>"
+      })
       socket.on('role_assignment', function(data) {
         if(data.isDictator){
           document.getElementById('player-role').innerHTML=`
@@ -85,6 +91,14 @@
         document.getElementsByName('choice')[0].setAttribute('disabled',true)
         document.getElementById('submit-button').setAttribute('disabled',true)
       }
+
+      function ready(){
+        //clear stuff
+        document.getElementById('info').innerHTML="<p>we are waiting for everyone to get ready</p>"
+
+        socket.emit('readyNextRound',{roomId: roomName})
+      }
+
 
 
       function renderInfo(data){
