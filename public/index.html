@@ -42,13 +42,35 @@
          <button  id="submit-button" onClick="choose()">Submit</button>`
       })
 
-      socket.on('result', function(data){
-        document.getElementById('result').innerHTML=`
+      socket.on('payout', function(data){
+        console.log(data)
+        let me = data.payouts.filter((player)=> player.isMe === true)[0]
+        prisonersStrategies = data.payouts.filter((player) => player.role == 'prisoner').map((prisoner) => {return prisoner.strategy})
+        dictatorPayout = data.payouts.filter((player) => player.role == 'dictator')[0].payout
+        if(me.role === 'dictator'){
+          let prisonersPayouts = data.payouts.filter((player) => player.role == 'prisoner').map((prisoner)=> {return prisoner.payout})
+          document.getElementById('result').innerHTML=`
+          <p> you are the dictator </p>
           <div><p>Your result is the following</p>
-          The dictator kept $ ${data.dictator}
-          You received $ ${data.payout}
-          The Strategy was ${data.strategy}
-          </div>`
+          You kept $ ${me.payout} <br>
+          Player received <b>${prisonersPayouts}</b> <br>
+          The Strategy was <b>${prisonersStrategies}</b> <br>
+          </div>
+          <button onClick="ready()">Ready for next round</button>`
+        } else {
+          document.getElementById('result').innerHTML=`
+          <p> You are a player </p>
+          <div><p>Your result is the following</p>
+          The dictator kept $ ${dictatorPayout} <br>
+          You received <b>$ ${me.payout}</b> <br>
+          The Strategy was <b>${prisonersStrategies}</b> <br>
+          </div>
+          <button onClick="ready()">Ready for next round</button>`
+
+        }
+        document.getElementById('player-role').innerHTML = "<div></div>"
+        document.getElementById('head').innerHTML = "<div></div>"
+        document.getElementById('endowment').innerHTML = "<div></div>"
       })
 
 

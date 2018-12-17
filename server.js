@@ -110,7 +110,7 @@ class Game {
         playerId: dictatorId,
         payout: dictatorPayout
       })
-      prisonerAcceptId = this.currentState.strategies.filter(
+      let prisonerAcceptId = this.currentState.strategies.filter(
         prisoner => prisoner.strategy === 'a'
       )[0].playerId
 
@@ -175,6 +175,7 @@ class Game {
       }
       console.log(this.currentState.playerRoleDict)
       player.role = this.currentState.playerRoleDict.filter((playerFromDict) => playerFromDict.playerId == player.playerId)[0].role // get role for plyer
+      player.strategy = this.currentState.strategies.filter((prisoner) => prisoner.playerId == player.playerId).length > 0 ? this.currentState.strategies.filter((prisoner) => prisoner.playerId == player.playerId)[0].strategy : 'none'
       return player
     })
   }
@@ -243,12 +244,12 @@ io.on('connection', socket => {
     if (!game) {
       throw new Error('no game found')
     }
-    game.currentState.endowment = data.endowment
+    game.currentState.endowment = 100 - data.endowment
     // emit choices for the prisoners
     // using the playerRoles over here because easier to have the prisoners array
     game.currentState.playerRoles.prisoners.forEach(prisoner => {
       console.log(prisoner)
-      io.sockets.connected[prisoner].emit('endow')
+      io.sockets.connected[prisoner].emit('endow', 100 - data.endowment)
     })
   })
 
@@ -275,7 +276,10 @@ io.on('connection', socket => {
       console.log("calculating strategies")
       game.calculatePayouts()
       console.log(game)
-      console.log(game.generatePersonalPayoutsObj(socket.id))
+      game.playerList.forEach((playerId) => {
+        console.log('emitting')
+        io.sockets.connected[playerId].emit('payout', {payouts:game.generatePersonalPayoutsObj(playerId)})
+      })
     }
   })
 
