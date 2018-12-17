@@ -9,11 +9,11 @@ app.get('/', function(req, res) {
   res.render('index')
 })
 
-var MongoClient = require('mongodb').MongoClient;
+var MongoClient = require('mongodb').MongoClient
 var MONGOSTRING =
-process.env.MONGODB_URI ||
-process.env.MONGOHQ_URL ||
-'mongodb://localhost:27107';
+  process.env.MONGODB_URI ||
+  process.env.MONGOHQ_URL ||
+  'mongodb://localhost:27107'
 
 var PORT = process.env.PORT || 9000
 var DBNAME = 'heroku_kk3tm0nm'
@@ -113,7 +113,7 @@ class Game {
       this.currentState.strategies.filter(player => player.strategy === 'a')
         .length === 1
     ) {
-      console.log("single accept, single reject")
+      console.log('single accept, single reject')
       // one accept, one reject
       // handle one accept one reject
       let dictatorPayout = 100 - this.currentState.endowment
@@ -145,7 +145,7 @@ class Game {
     ) {
       // both accept
       // handle both accept
-      console.log("double accept")
+      console.log('double accept')
       let dictatorPayout = 100 - this.currentState.endowment
       let playerPayout = (1 / 2) * this.currentState.endowment
 
@@ -180,28 +180,40 @@ class Game {
     }
 
     // save the sutff
-    MongoClient.connect(MONGOSTRING, (err,database)=>{
-      this.currentState.roomId = this.id
-      const db = database.db(DBNAME)
-      var collection = db.collection('game')
-      collection.insert(this.currentState, (err, result) => {
-        console.log(result)
-      })
-    })
+    MongoClient.connect(
+      MONGOSTRING,
+      (err, database) => {
+        this.currentState.roomId = this.id
+        const db = database.db(DBNAME)
+        var collection = db.collection('game')
+        collection.insert(this.currentState, (err, result) => {
+          console.log(result)
+        })
+      }
+    )
     // return
     return this.currentState.payouts
   }
   // generates the payout object tailored to player
-  generatePersonalPayoutsObj(playerId){
-    return this.currentState.payouts.map((player)=>{
-      if(player.playerId == playerId){
+  generatePersonalPayoutsObj(playerId) {
+    return this.currentState.payouts.map(player => {
+      if (player.playerId == playerId) {
         player.isMe = true
       } else {
         player.isMe = false
       }
       console.log(this.currentState.playerRoleDict)
-      player.role = this.currentState.playerRoleDict.filter((playerFromDict) => playerFromDict.playerId == player.playerId)[0].role // get role for plyer
-      player.strategy = this.currentState.strategies.filter((prisoner) => prisoner.playerId == player.playerId).length > 0 ? this.currentState.strategies.filter((prisoner) => prisoner.playerId == player.playerId)[0].strategy : 'none'
+      player.role = this.currentState.playerRoleDict.filter(
+        playerFromDict => playerFromDict.playerId == player.playerId
+      )[0].role // get role for plyer
+      player.strategy =
+        this.currentState.strategies.filter(
+          prisoner => prisoner.playerId == player.playerId
+        ).length > 0
+          ? this.currentState.strategies.filter(
+              prisoner => prisoner.playerId == player.playerId
+            )[0].strategy
+          : 'none'
       return player
     })
   }
@@ -219,7 +231,6 @@ function getGame(roomId) {
   game = gameList.filter(game => game.id == roomId)[0]
   return game ? game : null // return game or null
 }
-
 
 io.on('connection', socket => {
   console.log('connection')
@@ -244,7 +255,7 @@ io.on('connection', socket => {
     })
     io.in(room).clients((error, clients) => {
       // room is complete with 3 players
-      console.log("clients-length", clients.length)
+      console.log('clients-length', clients.length)
       if (clients.length == 3) {
         var game = createGame(room, clients)
         io.to(room).emit('info', {
@@ -299,12 +310,14 @@ io.on('connection', socket => {
     //calculate payouts
     console.log(game.currentState.strategies.length)
     if (game.currentState.strategies.length == 2) {
-      console.log("calculating strategies")
+      console.log('calculating strategies')
       game.calculatePayouts()
       console.log(game)
-      game.playerList.forEach((playerId) => {
+      game.playerList.forEach(playerId => {
         console.log('emitting')
-        io.sockets.connected[playerId].emit('payout', {payouts:game.generatePersonalPayoutsObj(playerId)})
+        io.sockets.connected[playerId].emit('payout', {
+          payouts: game.generatePersonalPayoutsObj(playerId)
+        })
       })
     }
   })
@@ -321,11 +334,8 @@ io.on('connection', socket => {
       : null // push if person not in list
     console.log('nextRoundList')
     console.log(game.currentState.nextRoundList)
-    if (game.currentState.nextRoundList.length  == 3) {
-
-
-
-      if(game.nextRound() == true){
+    if (game.currentState.nextRoundList.length == 3) {
+      if (game.nextRound() == true) {
         game.assignRoles()
         // emit role assignment if dictator or not
         game.currentState.playerRoleDict.forEach(player => {
@@ -333,7 +343,7 @@ io.on('connection', socket => {
             isDictator: player.role === 'dictator' ? true : false
           })
         })
-      }else {
+      } else {
         io.to(game.id).emit('endGame')
       }
     }

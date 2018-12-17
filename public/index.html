@@ -14,7 +14,7 @@
     <div id="result"> </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-    var socket = io.connect('http://localhost:9000', { 'forceNew': true });
+    var socket = io()
     var roomName = ""
     function join(){
       roomName = document.getElementsByName('roomName')[0].value
