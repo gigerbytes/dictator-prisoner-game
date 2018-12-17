@@ -8,9 +8,13 @@
     <div id="head" > </div>
     <div id="player-role" > </div>
     <div id="endowment"> </div>
+
+    <div id="result"> </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
     var socket = io.connect('http://localhost:9000', { 'forceNew': true });
+    var roomName = 'helloworld'
+    socket.emit('room',roomName)
 
       socket.on('info', function (data) {
         console.log('info')
@@ -22,14 +26,15 @@
           document.getElementById('player-role').innerHTML=`
             <p id="role-message">You are the Dictator</p>
             <p>How much do you want to keep? <input name="keep" type="number" /></p>
-             <button onClick="endow()">Submit</button>`
+             <button id="submit-button" onClick="endow()">Submit</button>`
+
         } else {
           document.getElementById('player-role').innerHTML=`<p id="role-message">You are a player, wait for the Dictator's endowment.</p>`
 
         }
       })
 
-      socket.on('endowment', function(data){
+      socket.on('endow', function(data){
         document.getElementById('endowment').innerHTML=`
         <p id="endowment-amount">The dictator endowed ${data}</p>
         <p>Do you accept or reject?
@@ -37,12 +42,54 @@
           <option value='a'> Accept </option>
           <option value='r'> Reject </option>
           </select>
-         <button onClick="choose()">Submit</button>`
+         <button  id="submit-button" onClick="choose()">Submit</button>`
       })
+
+      socket.on('payout', function(data){
+        console.log(data)
+        let me = data.payouts.filter((player)=> player.isMe === true)[0]
+        prisonersStrategies = data.payouts.filter((player) => player.role == 'prisoner').map((prisoner) => {return prisoner.strategy})
+        dictatorPayout = data.payouts.filter((player) => player.role == 'dictator')[0].payout
+        if(me.role === 'dictator'){
+          let prisonersPayouts = data.payouts.filter((player) => player.role == 'prisoner').map((prisoner)=> {return prisoner.payout})
+          document.getElementById('result').innerHTML=`
+          <p> you are the dictator </p>
+          <div><p>Your result is the following</p>
+          You kept $ ${me.payout} <br>
+          Player received <b>${prisonersPayouts}</b> <br>
+          The Strategy was <b>${prisonersStrategies}</b> <br>
+          </div>
+          <button onClick="ready()">Ready for next round</button>`
+        } else {
+          document.getElementById('result').innerHTML=`
+          <p> You are a player </p>
+          <div><p>Your result is the following</p>
+          The dictator kept $ ${dictatorPayout} <br>
+          You received <b>$ ${me.payout}</b> <br>
+          The Strategy was <b>${prisonersStrategies}</b> <br>
+          </div>
+          <button onClick="ready()">Ready for next round</button>`
+
+        }
+        document.getElementById('player-role').innerHTML = "<div></div>"
+        document.getElementById('head').innerHTML = "<div></div>"
+        document.getElementById('endowment').innerHTML = "<div></div>"
+      })
+
+
       function endow(){
         console.log(document.getElementsByName('keep')[0].value)
-        socket.emit('endow',document.getElementsByName('keep')[0].value)
+        socket.emit('endow',{roomId: roomName, endowment: document.getElementsByName('keep')[0].value})
       }
+
+      function choose(){
+        socket.emit('choose', {roomId: roomName, strategy:document.getElementsByName('choice')[0].value})
+        document.getElementsByName('choice')[0].setAttribute('disabled',true)
+        document.getElementsByName('choice')[0].setAttribute('disabled',true)
+        document.getElementById('submit-button').setAttribute('disabled',true)
+      }
+
+
       function renderInfo(data){
         console.log(data)
         document.getElementById('head').innerHTML=`<p id="infoMessage">${data.info}</p>`
