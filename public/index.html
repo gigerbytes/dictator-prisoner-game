@@ -5,6 +5,8 @@
     <title></title>
   </head>
   <body>
+    <div id="room"> <input type="text" name="roomName" value=""> <button onClick="join()"> Join Room </button> </div>
+
     <div id="head" > </div>
     <div id="player-role" > </div>
     <div id="endowment"> </div>
@@ -13,8 +15,12 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
     var socket = io.connect('http://localhost:9000', { 'forceNew': true });
-    var roomName = 'helloworld'
-    socket.emit('room',roomName)
+    var roomName = ""
+    function join(){
+      roomName = document.getElementsByName('roomName')[0].value
+      document.getElementById('room').innerHTML = `<p>Room: ${roomName}</p>`
+      socket.emit('room',roomName)
+    }
 
       socket.on('info', function (data) {
         console.log('info')

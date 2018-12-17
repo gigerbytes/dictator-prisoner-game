@@ -9,6 +9,14 @@ app.get('/', function(req, res) {
   res.render('index')
 })
 
+var MongoClient = require('mongodb').MongoClient;
+var MONGOSTRING =
+process.env.MONGODB_URI ||
+process.env.MONGOHQ_URL ||
+'mongodb://localhost:27107';
+
+var PORT = process.env.port || 9000
+var DBNAME = 'heroku_kk3tm0nm'
 const gameList = []
 
 // Game state looks like this:
@@ -170,6 +178,17 @@ class Game {
         this.currentState.payouts.push({ playerId: prisoner, payout: 25 })
       })
     }
+
+    // save the sutff
+    MongoClient.connect(MONGOSTRING, (err,database)=>{
+      this.currentState.roomId = this.id
+      const db = database.db(DBNAME)
+      var collection = db.collection('game')
+      collection.insert(this.currentState, (err, result) => {
+        console.log(result)
+      })
+    })
+    // return
     return this.currentState.payouts
   }
   // generates the payout object tailored to player
@@ -303,6 +322,9 @@ io.on('connection', socket => {
     console.log('nextRoundList')
     console.log(game.currentState.nextRoundList)
     if (game.currentState.nextRoundList.length  == 3) {
+
+
+
       if(game.nextRound() == true){
         game.assignRoles()
         // emit role assignment if dictator or not
@@ -318,7 +340,6 @@ io.on('connection', socket => {
   })
   // ****
 })
-server.listen(9000, function() {
+server.listen(PORT, function() {
   console.log(`Listening on ${server.address().port}`)
-
 })
