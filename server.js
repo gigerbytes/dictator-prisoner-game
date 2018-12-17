@@ -175,47 +175,20 @@ function getGame(roomId) {
   return game ? game : null // return game or null
 }
 
-function clientsInRoom(roomId, cb) {
-  let clients = io.in(roomId).clients((error, clients) => {
-    console.log('clients')
-    console.log(clients)
-    return clients == undefined ? [] : clients
-  })
-  cb()
-}
 
 io.on('connection', socket => {
   console.log('connection')
   socket.on('room', room => {
     // room is a string defining the room to join
-   io.in(room).clients((error, clients) => {
+    io.in(room).clients((error, clients) => {
       console.log(clients)
       console.log(clients.length)
-      if (!clients || clients.length <= 3) {
-        console.log('blabla')
+      if (!clients || clients.length <= 2) {
         socket.join(room)
-        console.log(clients)
         io.to(room).emit('info', {
           info: 'Hi, we are waiting for other players',
           readyToStart: false
         })
-        // room is complete with 3 players
-        if (clients.length == 3) {
-          var game = createGame(room, clients)
-          io.to(room).emit('info', {
-            info: 'The game is ready to start',
-            readyToStart: true
-          })
-          game.assignRoles()
-
-          // emit role assignment if dictator or not
-          game.currentState.playerRoleDict.forEach(player => {
-            io.sockets.connected[player.playerId].emit('role_assignment', {
-              isDictator: player.role === 'dictator' ? true : false
-            })
-          })
-        }
-        // there are too many player sin the room, do not add them. Can suggest new room?
       } else {
         io.sockets.connected[socket.id].emit('info', {
           info:
@@ -223,6 +196,26 @@ io.on('connection', socket => {
           readyToStart: false
         })
       }
+    })
+    io.in(room).clients((error, clients) => {
+      // room is complete with 3 players
+      console.log("clients-length", clients.length)
+      if (clients.length == 3) {
+        var game = createGame(room, clients)
+        io.to(room).emit('info', {
+          info: 'The game is ready to start',
+          readyToStart: true
+        })
+        game.assignRoles()
+
+        // emit role assignment if dictator or not
+        game.currentState.playerRoleDict.forEach(player => {
+          io.sockets.connected[player.playerId].emit('role_assignment', {
+            isDictator: player.role === 'dictator' ? true : false
+          })
+        })
+      }
+      // there are too many player sin the room, do not add them. Can suggest new room?
     })
   })
 
@@ -236,6 +229,7 @@ io.on('connection', socket => {
     // emit choices for the prisoners
     // using the playerRoles over here because easier to have the prisoners array
     game.currentState.playerRoles.prisoners.forEach(prisoner => {
+      console.log(prisoner)
       io.sockets.connected[prisoner].emit('endow')
     })
   })
