@@ -93,10 +93,12 @@ class Game {
   }
 
   calculatePayouts() {
+    console.log(this.currentState.strategies)
     if (
       this.currentState.strategies.filter(player => player.strategy === 'a')
         .length === 1
     ) {
+      console.log("single accept, single reject")
       // one accept, one reject
       // handle one accept one reject
       let dictatorPayout = 100 - this.currentState.endowment
@@ -128,6 +130,7 @@ class Game {
     ) {
       // both accept
       // handle both accept
+      console.log("double accept")
       let dictatorPayout = 100 - this.currentState.endowment
       let playerPayout = (1 / 2) * this.currentState.endowment
 
@@ -145,7 +148,7 @@ class Game {
       })
     } else {
       // this.currentState.strategies.filter((prisoner) => prisoner.strategy==='r').length === 2
-
+      console.log('double reject')
       // handle both reject
       let dictatorPayout = 0
       let playerPayout = 25
