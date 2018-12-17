@@ -8,12 +8,14 @@
     <div id="head" > </div>
     <div id="player-role" > </div>
     <div id="endowment"> </div>
+
     <div id="result"> </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
     var socket = io.connect('http://localhost:9000', { 'forceNew': true });
     var roomName = 'helloworld'
     socket.emit('room',roomName)
+
       socket.on('info', function (data) {
         console.log('info')
         renderInfo(data)
@@ -25,6 +27,7 @@
             <p id="role-message">You are the Dictator</p>
             <p>How much do you want to keep? <input name="keep" type="number" /></p>
              <button id="submit-button" onClick="endow()">Submit</button>`
+
         } else {
           document.getElementById('player-role').innerHTML=`<p id="role-message">You are a player, wait for the Dictator's endowment.</p>`
 
