@@ -15,7 +15,7 @@ process.env.MONGODB_URI ||
 process.env.MONGOHQ_URL ||
 'mongodb://localhost:27107';
 
-var PORT = process.env.port || 9000
+var PORT = process.env.PORT || 9000
 var DBNAME = 'heroku_kk3tm0nm'
 const gameList = []
 
