@@ -46,9 +46,10 @@ class Game {
     this.round = round
     this.playerList = playerList
     this.currentState = { roundId: this.round }
-    this.currentState.nextRoundList = []
     this.currentState.strategies = []
     this.currentState.payouts = []
+    this.currentState.nextRoundList = []
+    this.currentState.submissions = []
     this.previousStates = []
   }
 
@@ -159,6 +160,20 @@ class Game {
         this.currentState.payouts.push({ playerId: prisoner, payout: 25 })
       })
     }
+    return this.currentState.payouts
+  }
+  // generates the payout object tailored to player
+  generatePersonalPayoutsObj(playerId){
+    return this.currentState.payouts.map((player)=>{
+      if(player.playerId == playerId){
+        player.isMe = true
+      } else {
+        player.isMe = false
+      }
+      console.log(this.currentState.playerRoleDict)
+      player.role = this.currentState.playerRoleDict.filter((playerFromDict) => playerFromDict.playerId == player.playerId)[0].role // get role for plyer
+      return player
+    })
   }
 }
 
@@ -241,18 +256,23 @@ io.on('connection', socket => {
     }
     // can now do payout calculations based on answers of the prisoners
     // check if person submitted already
-    if (!game.currentState.submissions[socket.id]) {
+    if (game.currentState.submissions.indexOf(socket.id) == -1) {
       // has not submitted yet!
       game.currentState.strategies.push({
         playerId: socket.id,
         strategy: data.strategy
       })
+      game.currentState.submissions.push(socket.id)
     } else {
       // emit already submitted error
     }
     //calculate payouts
-    if (game.currentState.strategies.count == 2) {
+    console.log(game.currentState.strategies.length)
+    if (game.currentState.strategies.length == 2) {
+      console.log("calculating strategies")
       game.calculatePayouts()
+      console.log(game)
+      console.log(game.generatePersonalPayoutsObj(socket.id))
     }
   })
 
