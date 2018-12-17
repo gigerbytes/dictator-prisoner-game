@@ -216,14 +216,12 @@ io.on('connection', socket => {
     var game = getGame(data.roomId)
     if(!game){ throw new Error('no game found')}
     // check if 3 of the people submitted already
-    // if all submitted ... *****
-    if(!game.nextRound(){
       // emit game over + thank you for playing
       game.currentState.nextRoundList.indexOf(socket.id) ? game.currentState.nextRoundList.push(socket.id) : null // push if person not in list
       if(game.currentState.nextRoundList.length < 3){
         this.to(data.room).emit('info': 'waiting for the next round to start')
       } else {
-        game.nextRound()
+        game.nextRound() ? this.to(data.room).emit('nextRound') : this.to(data.room).emit('endGame')
       }
     })
     // ****
