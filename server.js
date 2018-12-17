@@ -40,29 +40,29 @@ const gameList = []
 //  ...
 //  ]
 // }
-class Game = {
+class Game {
   consructor(id, round, playerList){
     this.id = id
     this.round = round
     this.playerList = playerList
-    this.currentState = {roundId = this.round}
+    this.currentState = {roundId: this.round}
     this.currentState.nextRoundList = []
     this.currentState.strategies =[]
     this.currentState.payouts =[]
     this.previousStates=[]
   }
 
-  function nextRound(){
+  nextRound(){
     if(this.round>5){
       return false // game over
     }
     this.round = this.round +1
     this.previosStates.push(this.currentState)
-    this.currentState = {roundId = this.round}
+    this.currentState = {roundId: this.round}
     return true
   }
 
-  function assignRoles(){
+  assignRoles(){
     let dictatorIndex = Math.floor(Math.random() * this.playerList.length) // randomly pick dictator
     var dictator = this.playerList[dictatorIndex]
 
@@ -84,7 +84,7 @@ class Game = {
     console.log(this.currentState.playerRoleDict)
   }
 
-  function calculatePayouts(){
+  calculatePayouts(){
     if (
        this.currentState.strategies.filter((player) => player.strategy==='a').length === 1
 
@@ -200,10 +200,10 @@ io.on('connection', socket => {
     if(!game){ throw new Error('no game found')}
     // can now do payout calculations based on answers of the prisoners
     // check if person submitted already
-    if(!game.currentState.submissions[socket.id]{
+    if(!game.currentState.submissions[socket.id]){
       // has not submitted yet!
       game.currentState.strategies.push({playerId: socket.id, strategy: data.strategy})
-    }) else {
+    } else {
       // emit already submitted error
     }
     //calculate payouts
@@ -219,11 +219,10 @@ io.on('connection', socket => {
       // emit game over + thank you for playing
       game.currentState.nextRoundList.indexOf(socket.id) ? game.currentState.nextRoundList.push(socket.id) : null // push if person not in list
       if(game.currentState.nextRoundList.length < 3){
-        this.to(data.room).emit('info': 'waiting for the next round to start')
+        this.to(data.room).emit('info',{info: 'waiting for the next round to start'})
       } else {
         game.nextRound() ? this.to(data.room).emit('nextRound') : this.to(data.room).emit('endGame')
       }
     })
     // ****
   })
-})
