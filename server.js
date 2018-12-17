@@ -58,8 +58,15 @@ class Game {
       return false // game over
     }
     this.round = this.round + 1
-    this.previosStates.push(this.currentState)
+    this.previousStates.push(this.currentState)
     this.currentState = { roundId: this.round }
+    this.currentState.strategies = []
+    this.currentState.payouts = []
+    this.currentState.nextRoundList = []
+    this.currentState.submissions = []
+
+    console.log(this.currentState)
+    console.log(this.previousStates)
     return true
   }
 
@@ -293,12 +300,10 @@ io.on('connection', socket => {
     game.currentState.nextRoundList.indexOf(socket.id)
       ? game.currentState.nextRoundList.push(socket.id)
       : null // push if person not in list
-    if (game.currentState.nextRoundList.length < 3) {
-      this.to(data.room).emit('info', {
-        info: 'waiting for the next round to start'
-      })
-    } else {
-      if(game.nextRound){
+    console.log('nextRoundList')
+    console.log(game.currentState.nextRoundList)
+    if (game.currentState.nextRoundList.length  == 3) {
+      if(game.nextRound() == true){
         game.assignRoles()
         // emit role assignment if dictator or not
         game.currentState.playerRoleDict.forEach(player => {
@@ -307,7 +312,7 @@ io.on('connection', socket => {
           })
         })
       }else {
-        this.to(data.room).emit('endGame')
+        io.to(game.id).emit('endGame')
       }
     }
   })
